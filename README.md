@@ -2,7 +2,7 @@
 
 這是一個基於 Flask 的強化學習作業網頁設計，旨在視覺化呈現 **價值迭代 (Value Iteration)** 的演算法過程。
 * DEMO網站:https://deep-rl-dic-2.vercel.app/
-* 對話過程:
+* 對話過程:https://github.com/mengbei0116/DeepRL-DIC_2/blob/main/%E5%B0%8D%E8%A9%B1%E5%85%A7%E5%AE%B9.md
 
 ## 專案亮點
 
