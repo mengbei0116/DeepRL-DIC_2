@@ -1,6 +1,8 @@
 # DIC2 - Reinforcement Learning Visualizer
 
 這是一個基於 Flask 的強化學習作業網頁設計，旨在視覺化呈現 **價值迭代 (Value Iteration)** 的演算法過程。
+* DEMO網站:https://deep-rl-dic-2.vercel.app/
+* 對話過程:
 
 ## 專案亮點
 
