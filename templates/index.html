@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RL Visualizer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@500&display=swap"
+        rel="stylesheet">
+    <style>
+        .value-cell {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+
+<body>
+    <h1 class="main-title">DIC2</h1>
+
+    <div class="container">
+        <!-- Value Matrix -->
+        <div class="matrix-wrapper">
+            <div class="matrix-label">Value Matrix</div>
+            <div class="grid" id="value-grid">
+                {% for r in range(5) %}
+                {% for c in range(5) %}
+                <div class="cell value-cell 
+                            {% if r == 0 and c == 0 %} start {% endif %}
+                            {% if r == 4 and c == 4 %} end {% endif %}
+                            {% if [r, c] in obstacles %} obstacle {% endif %}" data-r="{{ r }}" data-c="{{ c }}">
+                    {% if [r, c] in obstacles %}
+                    <!-- Empty for obstacle -->
+                    {% else %}
+                    {% if r == 0 and c == 0 %}<span class="marker">S</span>{% endif %}
+                    {% if r == 4 and c == 4 %}<span class="marker">G</span>{% endif %}
+                    <span class="val">{{ value_matrix[r][c] }}</span>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Policy Matrix -->
+        <div class="matrix-wrapper">
+            <div class="matrix-label">Policy Matrix</div>
+            <div class="grid" id="policy-grid">
+                {% for r in range(5) %}
+                {% for c in range(5) %}
+                <div class="cell policy-cell 
+                            {% if r == 0 and c == 0 %} start {% endif %}
+                            {% if r == 4 and c == 4 %} end {% endif %}
+                            {% if [r, c] in obstacles %} obstacle {% endif %}" data-r="{{ r }}" data-c="{{ c }}">
+                    {% if [r, c] in obstacles %}
+                    <!-- Empty for obstacle -->
+                    {% else %}
+                    {% if r == 0 and c == 0 %}<span class="marker" style="color: white;">S</span>{% endif %}
+                    {% if r == 4 and c == 4 %}<span class="marker" style="color: white;">G</span>{% endif %}
+                    <span class="arrow">{{ policy_matrix[r][c] }}</span>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top: 30px;">
+        <button id="vi-btn" class="tech-button">開始價值迭代</button>
+    </div>
+
+    <script>
+        const sleep = ms => new Promise(res => setTimeout(res, ms));
+
+        document.getElementById('vi-btn').addEventListener('click', async () => {
+            const btn = document.getElementById('vi-btn');
+            btn.disabled = true;
+            btn.innerText = '正在獲取數據...';
+
+            try {
+                const response = await fetch('/run_vi', { method: 'POST' });
+                const data = await response.json();
+
+                // Reset path class before starting
+                document.querySelectorAll('.cell').forEach(c => c.classList.remove('path'));
+
+                // Iterate through history
+                for (let i = 0; i < data.history.length; i++) {
+                    const step = data.history[i];
+                    btn.innerText = `迭代第 ${i + 1} 步...`;
+
+                    // Update Value Grid
+                    document.querySelectorAll('#value-grid .cell').forEach(cell => {
+                        const r = cell.dataset.r;
+                        const c = cell.dataset.c;
+                        const valSpan = cell.querySelector('.val');
+                        if (valSpan) {
+                            valSpan.innerText = step.values[r][c];
+                        }
+                    });
+
+                    // Update Policy Grid
+                    document.querySelectorAll('#policy-grid .cell').forEach(cell => {
+                        const r = cell.dataset.r;
+                        const c = cell.dataset.c;
+                        const arrowSpan = cell.querySelector('.arrow');
+                        if (arrowSpan) {
+                            arrowSpan.innerText = step.policy[r][c];
+                        }
+                    });
+
+                    // Wait 0.3s
+                    await sleep(300);
+                }
+
+                // Finally highlight the path
+                data.path.forEach(pos => {
+                    const r = pos[0];
+                    const c = pos[1];
+                    if (!((r === 0 && c === 0) || (r === 4 && c === 4))) {
+                        const vCell = document.querySelector(`#value-grid .cell[data-r="${r}"][data-c="${c}"]`);
+                        const pCell = document.querySelector(`#policy-grid .cell[data-r="${r}"][data-c="${c}"]`);
+                        if (vCell) vCell.classList.add('path');
+                        if (pCell) pCell.classList.add('path');
+                    }
+                });
+
+                btn.innerText = '已顯示最佳路徑';
+            } catch (err) {
+                console.error(err);
+                btn.innerText = '錯誤';
+            } finally {
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerText = '重新開始價值迭代';
+                }, 1000);
+            }
+        });
+    </script>
+</body>
+
+</html>
